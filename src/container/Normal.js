@@ -1,13 +1,9 @@
-import React, { useReducer } from 'react';
+import React, { useEffect, useReducer } from 'react';
 import { Box, Grid, Button, FormControl, InputLabel, OutlinedInput, InputAdornment, FormHelperText } from '@material-ui/core';
 
 
 const initState = {
     amount: '',
-    exrate: localStorage.getItem('exrate') ? localStorage.getItem('exrate') : '1',
-    minFee: localStorage.getItem('minFee') ? localStorage.getItem('minFee') : '200',
-    maxFee: localStorage.getItem('maxFee') ? localStorage.getItem('maxFee') : '800',
-    feeRate: localStorage.getItem('feeRate') ? localStorage.getItem('feeRate') : '0.0005',
     fee: 0,
     cableFee: '',
     totalAmount: '0'
@@ -17,42 +13,11 @@ const stateReducer = (state, action) => {
 
     const newState = { ...state };
 
-    console.log(action.payload);
-    
-
     switch (action.type) {
 
         case 'UPDATE_AMOUNT':
 
             newState.amount = action.payload;
-
-            break;
-
-        case 'UPDATE_EXRATE':
-
-            newState.exrate = action.payload;
-            localStorage.setItem('exrate', action.payload);
-
-            break;
-
-        case 'UPDATE_MINFEE':
-
-            newState.minFee = action.payload;
-            localStorage.setItem('minFee', action.payload);
-
-            break;
-
-        case 'UPDATE_MAXFEE':
-
-            newState.maxFee = action.payload;
-            localStorage.setItem('maxFee', action.payload);
-
-            break;
-
-        case 'UPDATE_FEERATE':
-
-            newState.feeRate = action.payload;
-            localStorage.setItem('feeRate', action.payload);
 
             break;
 
@@ -68,18 +33,17 @@ const stateReducer = (state, action) => {
             newState.cableFee = initState.cableFee;
 
             break;
-
-        default:
-            
-            throw new Error('Something went wrong.');
+        
+        case 'UPDATE':
+            default:
 
     }
 
-    const amountTWD = +newState.amount * +newState.exrate;
-    let fee = amountTWD * +newState.feeRate;
+    const amountTWD = +newState.amount * +action.props.exrate;
+    let fee = amountTWD * +action.props.feeRate;
 
-    if (fee > +newState.maxFee) fee = +newState.maxFee;
-    if (fee < +newState.minFee) fee = +newState.minFee;
+    if (fee > +action.props.maxFee) fee = +action.props.maxFee;
+    if (fee < +action.props.minFee) fee = +action.props.minFee;
 
     newState.fee = fee;
 
@@ -89,13 +53,21 @@ const stateReducer = (state, action) => {
 
 };
 
-function Normal () {
+function Normal (props) {
 
     const [state, dispatch] = useReducer(stateReducer, initState);
+    
+    useEffect(() => {
 
-    const handleChange = (e, type) => dispatch({ type, payload: e.target.value });
+        dispatch({ type: 'UPDATE', props })
 
-    const handleReset = () => dispatch({ type: 'RESET' });
+    }, [props]);
+
+    const handleChange = (e, type) => dispatch({
+        type, payload: e.target.value, props
+    });
+
+    const handleReset = () => dispatch({ type: 'RESET', props });
         
     return (
 
@@ -127,8 +99,8 @@ function Normal () {
                             <OutlinedInput
                                 id="outlined-adornment-exrate"
                                 type="number"
-                                value={state.exrate}
-                                onChange={(e) => handleChange(e, 'UPDATE_EXRATE')}
+                                value={props.exrate}
+                                onChange={(e) => props.handleChange(e, 'UPDATE_EXRATE')}
                                 labelWidth={80}
                             />
                             <FormHelperText>預設 1(台幣兌台幣), 美金約填 30, 以此類推</FormHelperText>
@@ -142,8 +114,8 @@ function Normal () {
                             <OutlinedInput
                                 id="outlined-adornment-minFee"
                                 type="number"
-                                value={state.minFee}
-                                onChange={(e) => handleChange(e, 'UPDATE_MINFEE')}
+                                value={props.minFee}
+                                onChange={(e) => props.handleChange(e, 'UPDATE_MINFEE')}
                                 startAdornment={<InputAdornment position="start">NTD$</InputAdornment>}
                                 labelWidth={115}
                             />
@@ -157,8 +129,8 @@ function Normal () {
                             <OutlinedInput
                                 id="outlined-adornment-maxFee"
                                 type="number"
-                                value={state.maxFee}
-                                onChange={(e) => handleChange(e, 'UPDATE_MAXFEE')}
+                                value={props.maxFee}
+                                onChange={(e) => props.handleChange(e, 'UPDATE_MAXFEE')}
                                 startAdornment={<InputAdornment position="start">NTD$</InputAdornment>}
                                 labelWidth={115}
                             />
@@ -172,8 +144,8 @@ function Normal () {
                             <OutlinedInput
                                 id="outlined-adornment-feeRate"
                                 type="number"
-                                value={state.feeRate}
-                                onChange={(e) => handleChange(e, 'UPDATE_FEERATE')}
+                                value={props.feeRate}
+                                onChange={(e) => props.handleChange(e, 'UPDATE_FEERATE')}
                                 labelWidth={80}
                             />
                         </FormControl>
@@ -198,14 +170,15 @@ function Normal () {
                 <Grid item xs={12} sm={12} md={12}>
                     <Box m={2}>
                         <strong>
-                            總收費 NTD$&nbsp;
-                            <span >{Math.ceil(state.totalAmount).toString().replace(/\d(?=(?:\d{3})+\b)/g, '$&,')}</span>&nbsp;
+                            總收費
+                            <br/>
+                            <span>NTD$ {Math.ceil(+state.totalAmount).toString().replace(/\d(?=(?:\d{3})+\b)/g, '$&,')}</span>&nbsp;
                         </strong>
                         <br/>
                         {
                             state.fee > 0
                                 ? (
-                                    <span>(含手續費 NTD$ {Math.ceil(state.fee)})</span>
+                                    <span>(含手續費 NTD$ {Math.ceil(+state.fee)})</span>
                                 )
                                 : null
                         }
@@ -215,6 +188,7 @@ function Normal () {
                 <Grid item xs={12} sm={12} md={12}>
                     <Box m={2}>
                         <Button
+                            fullWidth
                             variant="contained"
                             color="primary"
                             onClick={() => handleReset('RESET')}
