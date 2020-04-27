@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/minna-calculator/precache-manifest.bad60e5251842578d7467d59e4cbfb1b.js"
+  "/minna-calculator/precache-manifest.16592f4733e2289f34af497cfb66f3e4.js"
 );
 
 self.addEventListener('message', (event) => {
